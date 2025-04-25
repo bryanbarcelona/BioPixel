@@ -1,0 +1,41 @@
+# Ignore virtual environment
+.biopixvenv/
+
+# Ignore build artifacts
+build/
+dist/
+
+# Ignore pycache files
+__pycache__/
+
+# Ignore compiled Python files
+*.pyc
+*.pyo
+*.pyd
+
+# Ignore specific executable or binary files
+optimized_tools.cp311-win_amd64.pyd
+old exes/
+
+# Ignore personal notes or config files (not code)
+personal_notes.txt
+setup_venv.bat
+startup_status
+
+# Ignore legacy or unused files or folders
+legacy/
+
+# Ignore any other files not related to the code
+*.log
+*.tmp
+*.bak
+*.swp
+
+# Include the following explicitly
+!tester.py  # Exclude tester.py, include everything else
+!utils/
+!models/
+!images/
+
+# Include all Python files in the project except `tester.py`
+*.py

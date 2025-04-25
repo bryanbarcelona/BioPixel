@@ -1,0 +1,15 @@
+<RCC>
+  <qresource prefix="images">
+    <file>images/images/BioPixelIcon.png</file>
+    <file>images/images/BioPixelIcon_small.png</file>
+  </qresource>
+  <qresource prefix="icon">
+    <file>images/icon/cil-media-play.png</file>
+    <file>images/icon/cil-x.png</file>
+    <file>images/icon/icon_close.png</file>
+    <file>images/icon/cil-fire.png</file>
+    <file>images/icon/cil-folder-open.png</file>
+    <file>images/icon/cil-house.png</file>
+    <file>images/icon/icon_menu.png</file>
+  </qresource>
+</RCC>
