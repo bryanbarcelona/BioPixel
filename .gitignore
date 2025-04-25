@@ -31,11 +31,9 @@ legacy/
 *.bak
 *.swp
 
-# Include the following explicitly
-!tester.py  # Exclude tester.py, include everything else
-!utils/
-!models/
-!images/
+# Ignore tester.py (do NOT track this file)
+/tester.py
 
-# Include all Python files in the project except `tester.py`
-*.py
+# Include models and images directories
+models/
+images/
