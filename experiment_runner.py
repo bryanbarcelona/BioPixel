@@ -220,72 +220,80 @@ class PodosomeExperimentRunner:
 
         return results
     
-def test_PLA_run():
-
-    image_path = r"D:\Microscopy Testing\20250323 FULL RUN"
-    #image_path = r"D:\Microscopy Testing\20250404 TINY RUN"
-    image_path = r"D:\Microscopy Testing\20250408 FULL RUN DREB VS EB3"
-    experiment_runner = PLAExperimentRunner(image_path)
+def pla_analysis_run(experiment_path: str, output_path: str = None, **kwargs):
+    """Run PLA analysis with flexible output directory support.
+    
+    Args:
+        experiment_path: Input directory path (can contain ~, ., ..)
+        output_path: Optional output directory (defaults to experiment_path)
+    """
+    experiment_path = Path(experiment_path).expanduser().resolve()
+    output_path = Path(output_path).expanduser().resolve() if output_path else experiment_path
+    
+    output_path.mkdir(parents=True, exist_ok=True)
+    
+    experiment_runner = PLAExperimentRunner(experiment_path)
     experiment_runner.run()
-
-    # Access the result
     result = experiment_runner.experiment_result
 
-    viz.plot_podosome_associated_signals(result, save_path=os.path.join(image_path, "podosome_associated_signals.png"), kind="kde_smooth")
-    # --- Experiment Summary ---
+    viz.plot_podosome_associated_signals(
+        result,
+        save_path=output_path / "podosome_associated_signals.png",
+        kind="kde_smooth"
+    )
+
+    # Print results
     print("\n--- Experiment Summary ---")
     print(f"Total Cells Processed: {result.total_cells}")
     print(f"Total Control Cells: {len(result.control_cells)}")
     print(f"Total Treatment Cells: {len(result.treatment_cells)}")
-
     print(f"Total Signals Detected: {result.total_signal_count}")
     print(f"Podosome-Associated Signals: {result.podosome_associated_count}")
     print(f"Non-Podosome Signals: {result.total_signal_count - result.podosome_associated_count}")
 
-    # --- By Group ---
     print("\n--- Signal Counts by Group ---")
     print(f"Control Cells - Total Signals: {result.count_signals(is_control=True)}")
     print(f"Control Cells - Podosome-Associated Signals: {result.count_signals(is_control=True, podosome_associated=True)}")
     print(f"Control Cells - Non-Podosome Signals: {result.count_signals(is_control=True, podosome_associated=False)}")
-
     print(f"Treatment Cells - Total Signals: {result.count_signals(is_control=False)}")
     print(f"Treatment Cells - Podosome-Associated Signals: {result.count_signals(is_control=False, podosome_associated=True)}")
     print(f"Treatment Cells - Non-Podosome Signals: {result.count_signals(is_control=False, podosome_associated=False)}")
 
-def test_Podosome_run():
+    return result
 
-    experiments = ExperimentHandler(r"D:\Microscopy Testing\20250406 FULL PODOPROFILE RUN")
-    #experiments = ExperimentHandler(r"D:\Microscopy Testing\20250420 TINY PODOPROFILE RUN")
-
-
+def podosome_profile_run(experiment_path: str, output_path: str = None, **kwargs):
+    """Run podosome profiling with flexible output directory support.
+    
+    Args:
+        experiment_path: Input directory path (can contain ~, ., ..)
+        output_path: Optional output directory (defaults to experiment_path)
+    """
+    experiment_path = Path(experiment_path).expanduser().resolve()
+    
+    experiments = ExperimentHandler(experiment_path)
+    colormap_list = ['afmhot', 'mako', 'viridis', 'plasma', 'inferno', 'cividis']
+    
     for experiment in experiments.each_file_is_one_experiment:
-        colormap_list = ['afmhot', 'mako', 'viridis', 'plasma', 'inferno', 'cividis']
-        
         results = PodosomeExperimentRunner(experiment).run()
-
+        
         for idx, key in enumerate(results):
             result = results[key]
-
             cmap = colormap_list[idx % len(colormap_list)]
-
-            mean_radial_profile = result.mean_radial_profile
-            save_path = result.file_path
-            protein = result.profile_name
-            podosome_count = result.podosome_count
-            radial_count = result.radial_profiles_count
-
+            
             viz.plot_profiles(
-                mean_radial_profile,
-                save_path=save_path,
-                protein=protein,
+                result.mean_radial_profile,
+                save_path=result.file_path,
+                protein=result.profile_name,
                 cmap=cmap,
-                podosome_count=podosome_count,
-                radial_count=radial_count
+                podosome_count=result.podosome_count,
+                radial_count=result.radial_profiles_count
             )
+
+    return results
 
 if __name__ == "__main__":
 
-    test = test_PLA_run()
+    test = pla_analysis_run(r"D:\Microscopy Testing\20250408 FULL RUN DREB VS EB3", output_path=r"D:\Microscopy Testing\20250408 FULL RUN DREB VS EB3\output")
     
-    #test_Podosome_run()
+    podosome_profile_run(r"D:\Microscopy Testing\20250406 FULL PODOPROFILE RUN", output_path=r"D:\Microscopy Testing\20250406 FULL PODOPROFILE RUN\output")
 

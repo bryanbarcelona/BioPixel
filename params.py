@@ -31,7 +31,7 @@ class DetectionParams:
     # Parameters with default values
     model: str = "macrophage"
     detection_channel: int = 1
-    auxilliary_channel: int = 0
+    auxiliary_channel: int = 0
     diameter: int = 10
     do_3d: bool = False
     flow_threshold: float = 0.9
