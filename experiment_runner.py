@@ -1,161 +1,220 @@
-from image_tensors import ImageReader
-from detectors import MacrophageDetector, PodosomeDetector, PodosomeManager
-from datetime import datetime
-from typing import List, Optional
-from pathlib import Path
 import os
-from data_structures import PLAExperimentResult, PLACellResult, PodosomeProfileResult
-from cell_analysis import PLACellAnalyzer, PodosomeProfileAnalyzer
 import pickle
+from pathlib import Path
+from typing import Dict, List, Optional
+
+import numpy as np
+
+from cell_analysis import PLACellAnalyzer, PodosomeProfileAnalyzer
+from data_structures import PLAExperimentResult, PLACellResult, PodosomeProfileResult
+from detectors import MacrophageDetector, PodosomeDetector, PodosomeManager
+from image_tensors import ImageReader
 from utils.io import ExperimentHandler
 from visualization import Visualizer as viz
 
 class PLAExperimentRunner:
-    def __init__(self, image_path: str):
+    """Manages the execution of PLA experiments across image files."""
+
+    SUPPORTED_EXTENSIONS: set[str] = {".lif", ".tif", ".czi", ".nd"}
+    CONTROL_KEYWORDS: set[str] = {"control", "ctrl", "test_control", "negative", "baseline", "untreated"}
+
+    def __init__(self, image_path: str) -> None:
+        """Initializes the runner with an image path.
+
+        Args:
+            image_path: Path to a single image file or directory containing images.
+
+        Raises:
+            FileNotFoundError: If the specified path does not exist.
+        """
         self.image_paths: List[str] = self._resolve_filepaths(image_path)
-        self.iteration_tracker = {'file': 0, 'scene': 0, 'cell': 0}
-        self.donor_count = 0
-        self.cell_count = 0
+        self.iteration_tracker: dict[str, int] = {"file": 0, "scene": 0, "cell": 0}
+        self.donor_count: int = 0
+        self.cell_count: int = 0
         self.experiment_result: Optional[PLAExperimentResult] = None
-        self.experimental_control = False
+        self.is_control: bool = False
+        self.base_directory: str = ""
 
     def _resolve_filepaths(self, path: str) -> List[str]:
-        path = Path(path).expanduser().resolve()
+        """Resolves file paths for processing.
 
-        if path.is_file():
-            self.base_directory = str(path.parent)
-            return [str(path)]
-        elif path.is_dir():
-            self.base_directory = str(path)
-            return [
-                str(file)
-                for file in path.glob("*")
-                if file.suffix in {".lif", ".tif", ".czi", ".nd"}
-            ]
-        else:
+        Args:
+            path: Path to a file or directory.
+
+        Returns:
+            List of valid image file paths.
+
+        Raises:
+            FileNotFoundError: If the path does not exist.
+        """
+        path_obj = Path(path).expanduser().resolve()
+        if not path_obj.exists():
             raise FileNotFoundError(f"Path '{path}' does not exist.")
 
-    def run(self, use_cache: bool = True, force_recompute: bool = False) -> PLAExperimentResult:
-        cache_path = self._get_cache_path()
+        self.base_directory = str(path_obj.parent if path_obj.is_file() else path_obj)
+        if path_obj.is_file():
+            return [str(path_obj)]
+        return [
+            str(file)
+            for file in path_obj.glob("*")
+            if file.suffix.lower() in self.SUPPORTED_EXTENSIONS
+        ]
 
+    def run(self, use_cache: bool = True, force_recompute: bool = False) -> PLAExperimentResult:
+        """Runs the PLA experiment.
+
+        Args:
+            use_cache: If True, attempts to load results from cache. Defaults to True.
+            force_recompute: If True, ignores cache and recomputes. Defaults to False.
+
+        Returns:
+            PLAExperimentResult containing experiment outcomes.
+        """
+        cache_path = self._get_cache_path()
         if use_cache and cache_path.exists() and not force_recompute:
             self.experiment_result = self._load_from_cache(cache_path)
         else:
             self.experiment_result = PLAExperimentResult()
             self.donor_count += 1
-            self._iterate_files()
+            self._process_files()
             self._save_to_cache(cache_path)
-
         return self.experiment_result
 
-    def _iterate_files(self):
-        for file_idx, file in enumerate(self.image_paths, start=1):
-            self._set_control_status(file)
-            self.iteration_tracker['file'] = file_idx
-            self.iteration_tracker['scene'] = 0
-            self.iteration_tracker['cell'] = 0
+    def _process_files(self) -> None:
+        """Processes each image file."""
+        for file_idx, file_path in enumerate(self.image_paths, start=1):
+            self._set_control_status(file_path)
+            self.iteration_tracker.update({"file": file_idx, "scene": 0, "cell": 0})
+            self._process_scenes(file_path)
 
-            self._iterate_scenes(file)
+    def _process_scenes(self, file_path: str) -> None:
+        """Processes scenes within an image file.
 
-    def _iterate_scenes(self, file: str):
-        images = ImageReader(file).image_data()
-
+        Args:
+            file_path: Path to the image file.
+        """
+        images = ImageReader(file_path).image_data()
         for scene_idx, scene in enumerate(images, start=1):
-            self.iteration_tracker['scene'] = scene_idx
-            self.iteration_tracker['cell'] = 0
+            self.iteration_tracker.update({"scene": scene_idx, "cell": 0})
+            self._process_cells(scene, file_path)
 
-            self._iterate_cells(scene, file)
+    def _process_cells(self, scene: np.ndarray, file_path: str) -> None:
+        """Processes cells within a scene.
 
-    def _iterate_cells(self, scene, file):
+        Args:
+            scene: Image data for the scene.
+            file_path: Path to the image file.
+        """
         cells = MacrophageDetector(scene, channel=-1, only_center_mask=False).blackout_non_mask_areas()
-
         for cell_idx, cell in enumerate(cells, start=1):
-            self.iteration_tracker['cell'] = cell_idx
+            self.iteration_tracker["cell"] = cell_idx
             self.cell_count += 1
 
-            analyzer = PLACellAnalyzer(cell, control=self.experimental_control)  # Set control logic appropriately
+            analyzer = PLACellAnalyzer(cell, control=self.is_control)
             analyzer.run()
 
             cell_result = PLACellResult(
-                file_idx=self.iteration_tracker['file'],
-                scene_idx=self.iteration_tracker['scene'],
+                file_idx=self.iteration_tracker["file"],
+                scene_idx=self.iteration_tracker["scene"],
                 cell_idx=cell_idx,
-                donor_id=self.donor_count,  # Add logic to assign donor ID if needed
+                donor_id=self.donor_count,
                 is_control=analyzer.control,
                 signals=analyzer.signals,
-                file_path=Path(file)
+                file_path=Path(file_path),
             )
-
             self.experiment_result.update(cell_result)
 
-    def _set_control_status(self, file) -> None:
-        control_keywords = {"control", "ctrl", "test_control", "negative", "baseline", "untreated"}
-        
-        basename, _ = os.path.splitext(os.path.basename(file).lower())
-        
-        self.experimental_control = any(keyword in basename for keyword in control_keywords)
+    def _set_control_status(self, file_path: str) -> None:
+        """Determines if the file is a control based on its name.
+
+        Args:
+            file_path: Path to the image file.
+        """
+        basename = os.path.splitext(os.path.basename(file_path).lower())[0]
+        self.is_control = any(keyword in basename for keyword in self.CONTROL_KEYWORDS)
 
     def _get_cache_path(self) -> Path:
+        """Generates the cache file path.
+
+        Returns:
+            Path to the cache file.
+        """
         folder_name = Path(self.base_directory).name
         return Path(self.base_directory) / f"{folder_name}.bpx"
 
     def _save_to_cache(self, path: Path) -> None:
+        """Saves experiment results to cache.
+
+        Args:
+            path: Path to the cache file.
+        """
         with open(path, "wb") as f:
             pickle.dump(self.experiment_result, f)
 
     def _load_from_cache(self, path: Path) -> PLAExperimentResult:
+        """Loads experiment results from cache.
+
+        Args:
+            path: Path to the cache file.
+
+        Returns:
+            Loaded PLAExperimentResult.
+        """
         with open(path, "rb") as f:
             return pickle.load(f)
 
 class PodosomeExperimentRunner:
-    def __init__(self, experiment: dict):
-        self.experiment = experiment
-        self.pickle_path = Path(experiment["pickle"])  # Assuming pickle file path is provided
+    """Manages execution of podosome experiments across image files and channels."""
 
-    def run(self):
-        # If the pickle already exists, load it directly to avoid recalculating
+    def __init__(self, experiment: dict) -> None:
+        """Initializes the runner with experiment configuration.
+
+        Args:
+            experiment: Dictionary containing experiment settings, including pickle path and channels.
+        """
+        self.experiment: dict = experiment
+        self.pickle_path: Path = Path(experiment["pickle"])
+
+    def run(self) -> Dict[int, PodosomeProfileResult]:
+        """Runs the podosome experiment, using cache if available.
+
+        Returns:
+            Dictionary mapping channel indices to PodosomeProfileResult objects.
+        """
         if self.pickle_path.exists():
             print(f"Loading cached result from {self.pickle_path}")
             with open(self.pickle_path, "rb") as f:
                 return pickle.load(f)
 
-        # Initialize the result objects for each channel
-        results = {
-            channel_index: PodosomeProfileResult(file_path=self.experiment["channels"][channel_index]["plot_path"], profile_name=self.experiment["channels"][channel_index]["name"])
-            for channel_index in self.experiment["channels"].keys()
+        results: Dict[int, PodosomeProfileResult] = {
+            idx: PodosomeProfileResult(
+                file_path=self.experiment["channels"][idx]["plot_path"],
+                profile_name=self.experiment["channels"][idx]["name"],
+            )
+            for idx in self.experiment["channels"]
         }
 
-        # Process each file in the experiment
         for file_path in self.experiment["files"]:
             print(f"Processing file: {file_path}")
-
-            for scene in ImageReader(file_path).image_data():  # Assuming ImageReader works like this
+            for scene in ImageReader(file_path).image_data():
                 for cell in MacrophageDetector(scene, channel=0, only_center_mask=True).blackout_non_mask_areas():
-                    # Detect podosome mask
                     podosome_mask = PodosomeDetector(cell, channel=0).detect()
                     podosome_cell = PodosomeManager(
                         mask_3d=podosome_mask,
                         size_um=1,
                         resolution_xy=5,
-                        resolution_z=1
+                        resolution_z=1,
                     ).cell_result
 
-                    # Now process each channel for the current cell
-                    for channel_index in results.keys():
-                        # Create an analyzer for the current channel
+                    for channel_idx in results:
                         analyzer = PodosomeProfileAnalyzer(
-                            image_data=cell,  # Pass the full scene
-                            podosome_cell=podosome_cell,  # Pass the podosome cell
-                            channel_index=channel_index  # Pass the channel index
+                            image_data=cell,
+                            podosome_cell=podosome_cell,
+                            channel_index=channel_idx,
                         )
-
-                        # Now analyze the podosomes and get the profile for this channel in this cell
                         profiles = analyzer.analyze_podosomes()
+                        results[channel_idx].update_from_cell(analyzer, profiles)
 
-                        # Update the corresponding result with the profile for this channel
-                        results[channel_index].update_from_cell(analyzer, profiles)
-
-        # After processing all files, pickle the results for each channel
         with open(self.pickle_path, "wb") as f:
             pickle.dump(results, f)
 
@@ -164,7 +223,8 @@ class PodosomeExperimentRunner:
 def test_PLA_run():
 
     image_path = r"D:\Microscopy Testing\20250323 FULL RUN"
-    image_path = r"D:\Microscopy Testing\20250404 TINY RUN"
+    #image_path = r"D:\Microscopy Testing\20250404 TINY RUN"
+    image_path = r"D:\Microscopy Testing\20250408 FULL RUN DREB VS EB3"
     experiment_runner = PLAExperimentRunner(image_path)
     experiment_runner.run()
 
@@ -195,7 +255,7 @@ def test_PLA_run():
 def test_Podosome_run():
 
     experiments = ExperimentHandler(r"D:\Microscopy Testing\20250406 FULL PODOPROFILE RUN")
-    experiments = ExperimentHandler(r"D:\Microscopy Testing\20250420 TINY PODOPROFILE RUN")
+    #experiments = ExperimentHandler(r"D:\Microscopy Testing\20250420 TINY PODOPROFILE RUN")
 
 
     for experiment in experiments.each_file_is_one_experiment:
@@ -225,7 +285,7 @@ def test_Podosome_run():
 
 if __name__ == "__main__":
 
-    #test = test_PLA_run()
+    test = test_PLA_run()
     
-    test_Podosome_run()
+    #test_Podosome_run()
 

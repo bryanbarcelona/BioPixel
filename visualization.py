@@ -2,38 +2,11 @@ import numpy as np
 import cv2
 import tifffile
 import pickle
-from typing import List, Dict, Tuple, Optional, Generator, Literal, Union, Any
+from typing import List, Dict, Literal, Union, Any
 from dataclasses import dataclass, field
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
-import matplotlib.patches as mpatches
-
-@dataclass
-class PLAData:
-    """
-    Class to hold the data for PLA analysis.
-    """
-    donors = 0
-    control_donors = 0
-    treatment_donors = 0
-    views = 0
-    control_views = 0
-    treatment_views = 0
-    cells = 0
-    control_cells = 0
-    treatment_cells = 0
-    signals_count = 0
-    control_signals = 0
-    treatment_signals = 0
-    podosome_associated_signals = 0
-    control_podosome_associated_signals = 0
-    treatment_podosome_associated_signals = 0
-    non_podosome_associated_signals = 0
-    control_non_podosome_associated_signals = 0
-    treatment_non_podosome_associated_signals = 0
-    signals: List[Dict[str, Any]] = field(default_factory=list)
-
 
 class Visualization:
     def __init__(self, image_data):
@@ -444,16 +417,13 @@ class Visualizer:
         show: bool = True,
         save: bool = True,
     ):
-        """Plot podosome-associated PLA signals from Signal objects."""
 
-        # Step 1: Filter signals
         signals = result.get_signals(podosome_associated=True, is_control=False)
 
         if not signals:
             print("No podosome-associated signals found.")
             return
 
-        # Step 2: Extract values
         resolution_factor = 17.0
         dist = np.array([s.distance_to_podosome for s in signals]) / resolution_factor
         height = np.array([s.relative_signal_height for s in signals])
@@ -463,7 +433,6 @@ class Visualizer:
             "RelativeSignalHeight": height
         })
 
-        # Step 3: Plot settings
         params = {
             "hexbin": {"kind": "hex", "cmap": "Blues", "height": 8},
             "kde": {"kind": "kde", "fill": True, "cmap": "Blues", "height": 8},
@@ -477,7 +446,6 @@ class Visualizer:
         sns.histplot(dist, ax=ax_x, color="#104862", kde=False, alpha=0.6)
         sns.histplot(y=height, ax=ax_y, color="#104862", kde=False, alpha=0.6)
 
-        # Step 4: Stats & lines
         std_x, std_y = np.std(dist), np.std(height)
         med_x, med_y = np.median(dist), np.median(height)
 
@@ -498,7 +466,6 @@ class Visualizer:
         plot.ax_joint.set_ylabel("Relative Signal Height")
         plot.ax_joint.grid(False)
 
-        # Step 5: Annotation
         plot.figure.text(
             0.8, 0.14, f"n = {len(dist)}", fontsize=12, ha='right', va='top',
             bbox=dict(facecolor='none', edgecolor='black', boxstyle='round,pad=0.5')
@@ -506,83 +473,140 @@ class Visualizer:
 
         ax_x.text(
             0.05, 0.8, f"Std: {std_x:.2f}\nMedian: {med_x:.2f}", transform=ax_x.transAxes,
-            fontsize=8, ha='left', va='top',
+            fontsize=11, ha='left', va='top',
             bbox=dict(facecolor='none', edgecolor='black', boxstyle='round,pad=0.5')
         )
 
         ax_y.text(
-            0.5, 0.98, f"Std: {std_y:.2f}\nMedian: {med_y:.2f}", transform=ax_y.transAxes,
-            fontsize=8, ha='center', va='bottom',
+            0.6, 0.98, f"Std: {std_y:.2f}\nMedian: {med_y:.2f}", transform=ax_y.transAxes,
+            fontsize=11, ha='center', va='bottom',
             bbox=dict(facecolor='none', edgecolor='black', boxstyle='round,pad=0.5')
         )
 
-        plot.ax_joint.axhline(y=1.0, color="grey", linestyle=(0, (3, 3)), linewidth=0.8, alpha=0.7)
+        plot.ax_joint.axhline(y=1.0, color="dimgray", linestyle=(0, (3, 3)), linewidth=0.8, alpha=1.0)
         plot.ax_joint.text(
             x=plot.ax_joint.get_xlim()[1] * 0.8,
             y=1.02,
             s="Podosome Apex",
-            fontsize=10, color="dimgray", fontweight="medium", alpha=0.7
+            fontsize=12, color="dimgray", fontweight="medium", alpha=1.0
         )
 
-        # Step 6: Output
         if show:
             plt.show()
 
         if save and save_path:
             plot.savefig(str(save_path), dpi=300, bbox_inches="tight")
 
+    # @staticmethod
+    # def plot_profiles(profiles, save_path=None, protein="F-Actin", cmap='afmhot', podosome_count=0, radial_count=0):
+        
+    #     mirrored_profiles = np.hstack([np.fliplr(profiles), profiles])
+
+    #     fig, ax = plt.subplots(figsize=(10, 6))
+    #     cax = ax.imshow(mirrored_profiles, cmap=cmap, aspect='auto')
+
+    #     plt.colorbar(cax, label='Intensity')
+
+    #     plt.title(f'Radial Intensity Profiles of {protein} Signals')
+    #     plt.xlabel('Relative Distance to Podosome Core (x/y)')
+    #     plt.ylabel('Relative Distance to Podosome Core (z)')
+
+    #     current_ylim = ax.get_ylim()
+
+    #     yticks = np.linspace(current_ylim[0], current_ylim[1], 5)
+    #     yticks_transformed = np.linspace(-2.25, 2.25, 5)
+
+    #     ax.set_yticks(yticks)
+    #     ytick_labels = [f'{tick:.2f}' for tick in yticks_transformed]
+
+    #     ytick_labels[0] = ''
+    #     ytick_labels[-1] = ''
+
+    #     ax.set_yticklabels(ytick_labels)
+
+    #     current_xlim = ax.get_xlim()
+
+    #     xticks = np.linspace(current_xlim[0], current_xlim[1], 5)
+    #     xticks_transformed = np.linspace(-2.5, 2.5, 5)
+
+    #     ax.set_xticks(xticks)
+    #     xtick_labels = [f'{tick:.2f}' for tick in xticks_transformed]
+
+    #     xtick_labels[0] = ''
+    #     xtick_labels[-1] = ''
+
+    #     ax.set_xticklabels(xtick_labels)
+
+    #     #plt.gca().invert_yaxis()
+
+    #     textstr = f'n Podosomes: {podosome_count}\nRadial Samples: {radial_count}'
+    #     props = dict(boxstyle='round,pad=0.2', facecolor='lightgrey', alpha=0.6, edgecolor='none')
+    #     ax.text(0.97, 0.03, textstr, transform=ax.transAxes, fontsize=12,
+    #             verticalalignment='bottom', horizontalalignment='right', bbox=props)
+
+    #     if save_path:
+    #         plt.savefig(save_path, dpi=600, bbox_inches='tight')
+        
+    #     plt.close()
+
     @staticmethod
-    def plot_profiles(profiles, save_path=None, protein="F-Actin", cmap='afmhot', podosome_count=0, radial_count=0):
-        
-        mirrored_profiles = np.hstack([np.fliplr(profiles), profiles])
+    def plot_profiles(profiles, save_path=None, protein="F-Actin", cmap='afmhot', podosome_count=0,
+                      radial_count=0, tick_fontsize=16, colorbar_fontsize=16, statbox_fontsize=16):
+            
+            mirrored_profiles = np.hstack([np.fliplr(profiles), profiles])
 
-        fig, ax = plt.subplots(figsize=(10, 6))
-        cax = ax.imshow(mirrored_profiles, cmap=cmap, aspect='auto')
+            fig, ax = plt.subplots(figsize=(10, 6))
+            cax = ax.imshow(mirrored_profiles, cmap=cmap, aspect='auto')
 
-        plt.colorbar(cax, label='Intensity')
+            # Create colorbar with fontsize adjustment
+            cbar = plt.colorbar(cax, label='')
+            cbar.ax.tick_params(labelsize=colorbar_fontsize)  # Adjust colorbar tick fontsize
+            #cbar.set_label('Intensity', size=colorbar_fontsize)  # Adjust colorbar label fontsize
 
-        plt.title(f'Radial Intensity Profiles of {protein} Signals')
-        plt.xlabel('Relative Distance to Podosome Core (x/y)')
-        plt.ylabel('Relative Distance to Podosome Core (z)')
+            plt.title(f'Radial Intensity Profiles of {protein} Signals')
+            plt.xlabel('Relative Distance to Podosome Core (x/y)')
+            plt.ylabel('Relative Distance to Podosome Core (z)')
 
-        current_ylim = ax.get_ylim()
+            current_ylim = ax.get_ylim()
 
-        yticks = np.linspace(current_ylim[0], current_ylim[1], 5)
-        yticks_transformed = np.linspace(-2.25, 2.25, 5)
+            yticks = np.linspace(current_ylim[0], current_ylim[1], 5)
+            yticks_transformed = np.linspace(2.25, -2.25, 5)
 
-        ax.set_yticks(yticks)
-        ytick_labels = [f'{tick:.2f}' for tick in yticks_transformed]
+            ax.set_yticks(yticks)
+            ytick_labels = [f'{tick:.2f}' for tick in yticks_transformed]
 
-        ytick_labels[0] = ''
-        ytick_labels[-1] = ''
+            ytick_labels[0] = ''
+            ytick_labels[-1] = ''
 
-        ax.set_yticklabels(ytick_labels)
+            ax.set_yticklabels(ytick_labels)
 
-        current_xlim = ax.get_xlim()
+            current_xlim = ax.get_xlim()
 
-        xticks = np.linspace(current_xlim[0], current_xlim[1], 5)
-        xticks_transformed = np.linspace(-2.5, 2.5, 5)
+            xticks = np.linspace(current_xlim[0], current_xlim[1], 5)
+            xticks_transformed = np.linspace(-2.5, 2.5, 5)
 
-        ax.set_xticks(xticks)
-        xtick_labels = [f'{tick:.2f}' for tick in xticks_transformed]
+            ax.set_xticks(xticks)
+            xtick_labels = [f'{tick:.2f}' for tick in xticks_transformed]
 
-        xtick_labels[0] = ''
-        xtick_labels[-1] = ''
+            xtick_labels[0] = ''
+            xtick_labels[-1] = ''
 
-        ax.set_xticklabels(xtick_labels)
+            ax.set_xticklabels(xtick_labels)
 
-        plt.gca().invert_yaxis()
+            plt.gca().invert_yaxis()
 
-        # Add text box with podosome and radial counts
-        textstr = f'n Podosomes: {podosome_count}\nRadial Samples: {radial_count}'
-        props = dict(boxstyle='round,pad=0.2', facecolor='lightgrey', alpha=0.4, edgecolor='none')
-        ax.text(0.97, 0.03, textstr, transform=ax.transAxes, fontsize=8,
-                verticalalignment='bottom', horizontalalignment='right', bbox=props)
+            # Adjust tick label fontsize
+            ax.tick_params(axis='both', which='major', labelsize=tick_fontsize)
 
-        if save_path:
-            plt.savefig(save_path, dpi=600, bbox_inches='tight')
-        
-        plt.close()
+            textstr = f'n Podosomes: {podosome_count}\nRadial Samples: {radial_count}'
+            props = dict(boxstyle='round,pad=0.2', facecolor='lightgrey', alpha=0.6, edgecolor='none')
+            ax.text(0.97, 0.03, textstr, transform=ax.transAxes, fontsize=statbox_fontsize,
+                    verticalalignment='bottom', horizontalalignment='right', bbox=props)
+
+            if save_path:
+                plt.savefig(save_path, dpi=600, bbox_inches='tight')
+            
+            plt.close()
 
 if __name__ == "__main__":
     
@@ -603,25 +627,3 @@ if __name__ == "__main__":
     plotter.plot_podosome_associated_signals(path3, type="kde_smooth")
     plotter.plot_podosome_associated_signals(path4, type="kde")
 
-    # print(len(plotter.analysis_data))
-    # all_signals = plotter._flatten_to_list()
-    # print(len(all_signals))
-
-
-# analysis_data[file_idx][scene_idx][cell_idx] = {
-# "podosome_associated_count": pla_cell.podosome_associated_count,
-# "non_podosome_associated_count": pla_cell.non_podosome_associated_count,
-# "total_count": len(pla_cell.signals),
-# "signals": pla_cell.signals,
-# "podosome_associated_signals": pla_cell.podosome_associated_signals,
-# "control": self._experimental_control,
-# }
-# import numpy as np
-# import tifffile
-
-# # Create a test image: (Z=5, Channels=3, Y=512, X=512, RGB=3)
-# z, c, y, x = 5, 3, 512, 512
-# data = np.random.randint(0, 256, (z, c, y, x, 3), dtype=np.uint8)  # Random RGB data
-
-# # Save as ImageJ-compatible TIFF
-# tifffile.imwrite(r"C:\Users\bryan\Desktop\multichannel_rgb_stack.tif", data, imagej=True, metadata={'axes': 'ZCYXS'})

@@ -1,30 +1,19 @@
-
-# Example of printing before each import
-#print("Loading OS module...", flush=True)
 import os
 
-#print("Loading Warnings module...", flush=True)
 import warnings
 
-#print("Loading NumPy module...", flush=True)
 import numpy as np
 
-#print("Loading TiffFile module...", flush=True)
 import tifffile
 
-#print("Loading Typing modules...", flush=True)
 from typing import Optional, List, Dict
 
-#print("Loading PIL Image module...", flush=True)
 from PIL import Image
 
-#print("Loading custom utility modules...", flush=True)
 from utils import io, image_tools
 
-#print("Loading Glob module...", flush=True)
 import glob
 
-#print("Loading custom image tensor modules...", flush=True)
 from image_tensors import ImageReader, TifImageReader
 
 import os

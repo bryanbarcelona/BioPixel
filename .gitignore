@@ -33,6 +33,9 @@ legacy/
 
 # Ignore tester.py (do NOT track this file)
 /tester.py
+/test_bar_plot.png
+/utils/mask_counter.py
+/utils/prep_tifs_4_testing.py
 
 # Include models and images directories
 models/
