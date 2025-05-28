@@ -33,7 +33,6 @@ class PLAExperimentRunner:
         self.cell_count: int = 0
         self.experiment_result: Optional[PLAExperimentResult] = None
         self.is_control: bool = False
-        self.base_directory: str = ""
 
     def _resolve_filepaths(self, path: str) -> List[str]:
         """Resolves file paths for processing.
@@ -71,6 +70,7 @@ class PLAExperimentRunner:
             PLAExperimentResult containing experiment outcomes.
         """
         cache_path = self._get_cache_path()
+        print(f"Cache path: {cache_path}")
         if use_cache and cache_path.exists() and not force_recompute:
             self.experiment_result = self._load_from_cache(cache_path)
         else:
