@@ -40,6 +40,7 @@ The tool is interactive and command-line driven, with support for key microscopy
 This tool is built for local use on Windows systems and assumes minimal programming experience. To use BioPixel, you’ll need:
 
 - 🐍 **[Miniconda](https://docs.conda.io/en/latest/miniconda.html)** installed (preferred over Anaconda for lightweight environments)
+- 🧬 **[Git for Windows](https://git-scm.com/download/win)**  Required to download (clone) the project from GitHub. After installing, you'll be able to use the `git` command in your terminal.
 - 📂 Basic familiarity with your file system (copying/pasting paths)
 - 🖼️ Microscopy images in one of the following formats:
   - `.lif`, `.czi`, `.tif`, `.nd`, `.oib` *(only `.lif` has been fully tested)*
@@ -59,6 +60,13 @@ This tool is built for local use on Windows systems and assumes minimal programm
 ---
 
 ## 📦 Setup Instructions
+
+> 💡 **Before you begin:**  
+> Open the **Anaconda Prompt** (or your preferred terminal) and navigate to the folder where you want to store the BioPixel code. For example:
+>
+> ```bash
+> cd D:\MyProjects
+> ```
 
 ### 1. Clone the repository
 
