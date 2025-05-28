@@ -36,6 +36,7 @@ legacy/
 /test_bar_plot.png
 /utils/mask_counter.py
 /utils/prep_tifs_4_testing.py
+/BioPixel.spec
 
 # Include models and images directories
 models/

@@ -2,14 +2,18 @@
 
 
 a = Analysis(
-    ['bio_pixel_gui.py'],
+    ['biopixel.py'],
     pathex=['D:\\Coding\\BioPixel'],
     binaries=[],
     datas=[],
     hiddenimports=[
 	'image_processor',
 	'image_tensors',
-	'cell_detector',
+	'cell_analysis',
+	'data_structures',
+	'detectors',
+	'experiment_runner',
+	'params',
 	'utils.czi_metadata',
 	'utils.image_tools',
 	'utils.io',
@@ -30,7 +34,7 @@ exe = EXE(
     a.binaries,
     a.datas,
     [],
-    name='BioPixel_v0.13',
+    name='biopixel',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
