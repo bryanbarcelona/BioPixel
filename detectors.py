@@ -190,7 +190,7 @@ class CellPoseDetector:
 
         image = self._single_channel_tensor
 
-        model = models.CellposeModel(gpu=params.gpu, pretrained_model=params.model_path)
+        model = models.CellposeModel(gpu=params.gpu, pretrained_model=str(params.model_path))
 
         masks, flows, styles = model.eval(
             image,
