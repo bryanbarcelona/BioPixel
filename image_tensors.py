@@ -715,10 +715,12 @@ class CziImageReader(BaseImageReader):
     def _process_image_and_metadata(self):
 
         tensor = self._czi_file.asarray()
-
-        if "0" in self._dimension_map:
-            position = list(self._dimension_map.keys()).index("0")
-            tensor = np.squeeze(tensor, axis=position)
+        
+        for dim in list(self._dimension_map.keys()):
+            if self._dimension_map[dim] == 1 and dim not in ["H", "T", "C", "Z", "Y", "X"]:
+                axis = list(self._dimension_map.keys()).index(dim)
+                tensor = np.squeeze(tensor, axis=axis)
+                self._dimension_map.pop(dim)
 
         if "H" in self._dimension_map:
             position = list(self._dimension_map.keys()).index("H")

@@ -338,12 +338,30 @@ class ExperimentHandler:
             experiments.append(meta)
         return experiments
 
-    def get_experiment_metadata(self, files, channel_names=None, from_filename=None):
+    @property
+    def each_folder_is_one_experiment(self):
+        experiments = []
+        for folder in [self.base_directory] + [p for p in self.base_directory.rglob('*') if p.is_dir()]:
+            files = self.get_microscopy_files(folder)
+            if not files:
+                continue
+            label = folder.name
+            meta = self.get_experiment_metadata(
+                files,
+                channel_names=["F-Actin"],
+                from_filename=1,
+                label_override=label
+            )
+            meta["files"] = files
+            experiments.append(meta)
+        return experiments
+
+    def get_experiment_metadata(self, files, channel_names=None, from_filename=None, label_override=None):
         if isinstance(files, (str, Path)):
             files = [Path(files)]
 
         main_file = files[0]
-        label = main_file.stem
+        label = label_override if label_override else main_file.stem
 
         # Default channel names
         if channel_names is None:

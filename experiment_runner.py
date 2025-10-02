@@ -197,7 +197,7 @@ class PodosomeExperimentRunner:
         for file_path in self.experiment["files"]:
             print(f"Processing file: {file_path}")
             for scene in ImageReader(file_path).image_data():
-                for cell in MacrophageDetector(scene, channel=0, only_center_mask=True).blackout_non_mask_areas():
+                for cell in MacrophageDetector(scene, channel=0, only_center_mask=False).blackout_non_mask_areas():
                     podosome_mask = PodosomeDetector(cell, channel=0).detect()
                     podosome_cell = PodosomeManager(
                         mask_3d=podosome_mask,
@@ -273,7 +273,9 @@ def podosome_profile_run(experiment_path: str, output_path: str = None, **kwargs
     experiments = ExperimentHandler(experiment_path)
     colormap_list = ['afmhot', 'mako', 'viridis', 'plasma', 'inferno', 'cividis']
     
-    for experiment in experiments.each_file_is_one_experiment:
+    # For now manually choose which mode to run
+    # for experiment in experiments.each_file_is_one_experiment:
+    for experiment in experiments.each_folder_is_one_experiment:
         results = PodosomeExperimentRunner(experiment).run()
         
         for idx, key in enumerate(results):

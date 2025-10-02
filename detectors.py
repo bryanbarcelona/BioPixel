@@ -10,6 +10,7 @@ from skimage.feature import peak_local_max
 import matplotlib.pyplot as plt
 
 from cellpose import models
+import tifffile
 from data_structures import Podosome, PodosomeCellResult, Signal
 from params import DetectionParams, ModelPaths
 from utils.io import get_resource_path
@@ -420,6 +421,9 @@ class PodosomeManager:
         # Temporary storage during processing
         podosomes = {}
         
+        # # DEBUG
+        # binary_complete = []
+        # dilated_complete = []
         # Existing processing logic (modified slightly)
         unique_ids = np.unique(self.mask_3d)
         for podosome_id in unique_ids[unique_ids != 0]:
@@ -605,8 +609,8 @@ class PodosomeManager:
             expanded_mask = np.ascontiguousarray(expanded_mask)
 
         # Draw the expanded contour onto the expanded mask
-        cv2.drawContours(expanded_mask, [expanded_contour.astype(np.int32)], -1, 255, thickness=cv2.FILLED)
-        #cv2.fillPoly(expanded_mask, [expanded_contour.astype(np.int32)], 255)
+        #cv2.drawContours(expanded_mask, [expanded_contour.astype(np.int32)], -1, 255, thickness=cv2.FILLED)
+        cv2.fillPoly(expanded_mask, [expanded_contour.astype(np.int32)], 255)
         
         return expanded_mask
         
@@ -964,7 +968,6 @@ class PodosomeDetector:
         masks_3d = CellPoseDetector(image_3d_normalized, do_3d=True, diameter=10, 
                                       model="podosomes", detection_channel=1, 
                                       gpu=True, flow_threshold=flow_threshold_3d, cellprob_threshold=cellprob_threshold_3d).detect()
-                            
         return masks_3d
     
     @property
