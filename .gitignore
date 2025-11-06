@@ -24,6 +24,10 @@ startup_status
 
 # Ignore legacy or unused files or folders
 legacy/
+src/
+main.py
+pyproject.toml
+.python-version
 
 # Ignore any other files not related to the code
 *.log

@@ -636,8 +636,8 @@ class PodosomeManager:
         dilated_mask = np.zeros_like(binary_mask, dtype=np.uint8)
         
         for z in range(binary_mask.shape[0]):
-            #dilated_mask[z] = cv2.dilate(binary_mask[z], self.kernel_xy, iterations=dilation_iterations)
-            dilated_mask[z] = self._expand_mask_cv2(binary_mask[z], scale_factor=2.0)
+            dilated_mask[z] = cv2.dilate(binary_mask[z], self.kernel_xy, iterations=dilation_iterations)
+            #dilated_mask[z] = self._expand_mask_cv2(binary_mask[z], scale_factor=2.0)
         dilated_mask_yz = np.transpose(dilated_mask, (1, 0, 2))
         for y in range(dilated_mask_yz.shape[0]):
             dilated_mask_yz[y] = cv2.dilate(dilated_mask_yz[y], self.kernel_z, iterations=dilation_iterations)
