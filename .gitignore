@@ -45,6 +45,17 @@ pyproject.toml
 # Include models and images directories
 models/
 images/icon/
-images/images/
 images/test_images/
 images/test_music/
+images/images/BioPixelIcon_small.png
+images/images/Designer (1).jpeg
+images/images/Designer.jpeg
+images/images/Designer__1_-removebg-preview.png
+images/images/Default_A_vibrant_futuristic_splash_screen_for_BioPixel_a_biol_0.jpg
+images/images/Default_A_vibrant_futuristic_splash_screen_for_BioPixel_a_biol_1.jpg
+images/images/Default_A_vibrant_futuristic_splash_screen_for_BioPixel_a_biol_2.jpg
+images/images/Default_A_vibrant_futuristic_splash_screen_for_BioPixel_a_biol_3.jpg
+images/images/Splash Screen/
+images/images/Splash Screen/Designer (1).jpeg
+images/images/Splash Screen/Designer.jpeg
+images/images/Splash Screen/Designer__1_-removebg-preview.png
