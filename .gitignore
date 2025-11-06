@@ -44,4 +44,7 @@ pyproject.toml
 
 # Include models and images directories
 models/
-images/
+images/icon/
+images/images/
+images/test_images/
+images/test_music/
