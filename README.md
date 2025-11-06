@@ -220,7 +220,15 @@ The priority was **enabling biological discovery** over software architecture pe
 
 If you use BioPixel in your research, please cite:
 
-**Barcelona, B.** (2025). *BioPixel Reveals How Podosomes and Microtubule +TIPs Regulate Intracellular Transport.* Doctoral dissertation, University of Hamburg, Faculty of Mathematics, Computer Science and Natural Sciences, Department of Biology. Hamburg, Germany.
+**Barcelona, B.G.J.** (2025). *BioPixel Reveals How Podosomes and Microtubule +TIPs Regulate Intracellular Transport.* Doctoral dissertation, University of Hamburg, Faculty of Mathematics, Computer Science and Natural Sciences, Department of Biology. Hamburg, Germany.
+
+BioPixel uses Cellpose for cell segmentation. Please also cite:
+
+- Stringer, C., Wang, T., Michaelos, M., & Pachitariu, M. (2021). Cellpose: a generalist algorithm for cellular segmentation. *Nature Methods*, 18(1), 100–106. https://doi.org/10.1038/s41592-020-01018-x
+
+- Pachitariu, M., & Stringer, C. (2022). Cellpose 2.0: how to train your own model. *Nature Methods*, 19(12), 1634–1641. https://doi.org/10.1038/s41592-022-01663-4
+
+- Stringer, C., & Pachitariu, M. (2025). Cellpose3: one-click image restoration for improved cellular segmentation. *Nature Methods*. https://doi.org/10.1038/s41592-025-02595-5
 
 ---
 
